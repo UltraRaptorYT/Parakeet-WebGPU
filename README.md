@@ -33,9 +33,10 @@ npm run build
 
 ## Current model
 
-The MVP uses `onnx-community/whisper-tiny.en` with WebGPU and q4 ONNX weights.
-This is the known Transformers.js-compatible validation backend. The worker
-message contract and audio path are intentionally model-agnostic so a verified
+The MVP uses multilingual `onnx-community/whisper-base` with WebGPU and q4 ONNX
+weights. The page supplies the selected spoken-language code explicitly because
+this Transformers.js version does not automatically detect Whisper languages.
+The worker contract and audio path remain model-agnostic so a verified
 browser-compatible Parakeet ONNX conversion can replace it later.
 
 ## Architecture
@@ -57,7 +58,8 @@ before display.
 
 ## Known limitations
 
-- Whisper Tiny is English-only and chunked ASR is not true streaming.
+- Chunked Whisper ASR is not true streaming and mixed-language speech within a
+  single chunk is not automatically detected.
 - Accuracy and latency vary significantly by GPU and microphone quality.
 - An overloaded worker may skip an older queued chunk to remain live; the UI
   reports when this happens.

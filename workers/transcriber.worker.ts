@@ -5,7 +5,7 @@ import {
   type ProgressInfo,
 } from "@huggingface/transformers";
 
-const MODEL_ID = "onnx-community/whisper-tiny.en";
+const MODEL_ID = "onnx-community/whisper-base";
 const MAX_QUEUED_CHUNKS = 3;
 
 env.allowLocalModels = false;
@@ -17,6 +17,7 @@ type WorkerRequest =
       type: "transcribe";
       id: string;
       sessionId: number;
+      language: string;
       audio: Float32Array;
     }
   | { type: "reset"; sessionId: number };
@@ -114,11 +115,10 @@ async function processQueue() {
     const startedAt = performance.now();
 
     try {
-      // whisper-tiny.en ships the correct English-only generation config.
-      // Multilingual language/task tokens are not available for this model.
       const output = await model(item.audio, {
-        is_multilingual: false,
-        return_timestamps: true,
+        language: item.language,
+        task: "transcribe",
+        return_timestamps: false,
       });
 
       const text = Array.isArray(output)

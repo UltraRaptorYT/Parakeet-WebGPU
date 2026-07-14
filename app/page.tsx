@@ -53,6 +53,30 @@ type WorkletMessage = Float32Array | { type: "flushed" };
 const CHUNK_SECONDS = 3;
 const OVERLAP_SECONDS = 0.4;
 const SILENCE_RMS_THRESHOLD = 0.0015;
+const LANGUAGE_OPTIONS = [
+  { code: "en", label: "English" },
+  { code: "zh", label: "Chinese" },
+  { code: "ms", label: "Malay" },
+  { code: "ta", label: "Tamil" },
+  { code: "id", label: "Indonesian" },
+  { code: "ja", label: "Japanese" },
+  { code: "ko", label: "Korean" },
+  { code: "th", label: "Thai" },
+  { code: "vi", label: "Vietnamese" },
+  { code: "hi", label: "Hindi" },
+  { code: "ar", label: "Arabic" },
+  { code: "fr", label: "French" },
+  { code: "de", label: "German" },
+  { code: "es", label: "Spanish" },
+  { code: "pt", label: "Portuguese" },
+  { code: "it", label: "Italian" },
+  { code: "nl", label: "Dutch" },
+  { code: "ru", label: "Russian" },
+  { code: "tr", label: "Turkish" },
+  { code: "tl", label: "Filipino" },
+] as const;
+
+type LanguageCode = (typeof LANGUAGE_OPTIONS)[number]["code"];
 
 export default function Home() {
   const workerRef = useRef<Worker | null>(null);
@@ -67,6 +91,7 @@ export default function Home() {
   const pendingChunksRef = useRef(0);
   const sessionIdRef = useRef(0);
   const chunkSequenceRef = useRef(0);
+  const languageRef = useRef<LanguageCode>("en");
   const workletFlushResolverRef = useRef<(() => void) | null>(null);
   const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -83,6 +108,8 @@ export default function Home() {
   const [lastInferenceMs, setLastInferenceMs] = useState<number | null>(null);
   const [userError, setUserError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [selectedLanguage, setSelectedLanguage] =
+    useState<LanguageCode>("en");
 
   useEffect(() => {
     let cancelled = false;
@@ -478,7 +505,13 @@ export default function Home() {
     setIsWorkerBusy(true);
 
     worker.postMessage(
-      { type: "transcribe", id, sessionId, audio },
+      {
+        type: "transcribe",
+        id,
+        sessionId,
+        language: languageRef.current,
+        audio,
+      },
       [audio.buffer],
     );
   }
@@ -542,7 +575,7 @@ export default function Home() {
           <div className="flex flex-wrap items-center gap-3 text-sm text-neutral-400">
             <span>Private, on-device speech recognition</span>
             <span className="rounded-full border border-neutral-800 px-3 py-1 text-xs">
-              Whisper Tiny · WebGPU
+              Whisper Base · Multilingual · WebGPU
             </span>
           </div>
 
@@ -597,6 +630,32 @@ export default function Home() {
               </div>
             </div>
           )}
+
+          <div className="mt-6 max-w-xs">
+            <label
+              htmlFor="spoken-language"
+              className="block text-sm text-neutral-400"
+            >
+              Spoken language
+            </label>
+            <select
+              id="spoken-language"
+              value={selectedLanguage}
+              disabled={isRecording || isStarting || isStopping}
+              onChange={(event) => {
+                const language = event.target.value as LanguageCode;
+                languageRef.current = language;
+                setSelectedLanguage(language);
+              }}
+              className="mt-2 w-full rounded-xl border border-neutral-700 bg-neutral-950 px-4 py-3 text-white outline-none transition focus:border-neutral-500 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {LANGUAGE_OPTIONS.map((language) => (
+                <option key={language.code} value={language.code}>
+                  {language.label}
+                </option>
+              ))}
+            </select>
+          </div>
 
           <div className="mt-8 flex flex-wrap gap-3">
             {canRecord && (
